@@ -5,7 +5,7 @@ import java.util.Date;
  * is given a unique number id. Methods should use this id to access customers instead of by name in case of duplicate names.*/
 public class Customer implements java.io.Serializable {
 	//Personal and billing information for customer
-	final private long serialVersionUID = 635927;
+	private static final long serialVersionUID = 635927;
 	private int id;
 	private String firstName;
 	private String lastName;

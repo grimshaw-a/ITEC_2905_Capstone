@@ -3,13 +3,14 @@ import java.util.Collection;
 
 public class SKU implements java.io.Serializable {
 	//Properties
-	final private long serialVersionUID = 419910;
+	private static final long serialVersionUID = 419910;
 	private String id; // SKU numbers are 5 digits long.
 	private String name;
 	private double wholesaleCost;
 	private double retailPrice;
 	private int shelfLifeInDays;
 	private int unitsInStock;
+	private int quantitySold;
 	private ArrayList<String> colors = new ArrayList<>();
 	
 	//Constructors
@@ -65,6 +66,12 @@ public class SKU implements java.io.Serializable {
 	public void setUnitsInStock(int numberInStock) {
 		this.unitsInStock = numberInStock;
 	}
+	public int getQuantitySold() {
+		return quantitySold;
+	}
+	public void setQuantitySold(int quantitySold) {
+		this.quantitySold = quantitySold;
+	}
 	public ArrayList<String> getColors() {
 		return colors;
 	}
@@ -76,7 +83,10 @@ public class SKU implements java.io.Serializable {
 		colors.addAll(colorList);
 	}
 	
-	//Add colors to color arraylist
+	//Additional methods
+	public void reduceUnitsInStock(int quantity) {
+		this.unitsInStock -= quantity;
+	}
 
 	
 	

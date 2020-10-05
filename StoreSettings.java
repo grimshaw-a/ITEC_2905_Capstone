@@ -19,6 +19,7 @@ public class StoreSettings {
 	private int nextIncidentID;
 	private String adminPassword;
 	private boolean passwordCorrect;
+	private double taxRate = 0.0625;
 	
 	//Getters and setters
 	public String getStoreName() {
@@ -110,6 +111,12 @@ public class StoreSettings {
 	}
 	public void setNextIncidentID(int nextIncidentID) {
 		this.nextIncidentID = nextIncidentID;
+	}
+	public double getTaxRate() {
+		return taxRate;
+	}
+	public void setTaxRate(double taxRate) {
+		this.taxRate = taxRate;
 	}
 	
 	//Additional methods
