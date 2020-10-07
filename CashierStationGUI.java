@@ -692,6 +692,10 @@ public class CashierStationGUI extends Application{
 			loadCheckout2(primaryStage, selectedCustomer);
 		});
 		
+		btnAdd.setOnAction((e) -> {
+			editCustomer(primaryStage, null);
+		});
+		
 		//Load Scene
 		Scene scene = new Scene(pane);
 		primaryStage.setTitle(myStore.getStoreName() + ": Checkout");
@@ -748,6 +752,9 @@ public class CashierStationGUI extends Application{
 		lbTotal.setFont(Font.font("Arial", FontWeight.BOLD, 16));
 		Label total = new Label("$0.00");
 		total.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+		CheckBox cbDelivery = new CheckBox("Make Delivery?");
+		Label lbDeliverTo = new Label("Deliver To:");
+		lbDeliverTo.setFont(Font.font("Arial", FontWeight.BOLD, 16));
 		
 		//Create text fields
 		TextField tfNameSearch = new TextField();
@@ -771,6 +778,7 @@ public class CashierStationGUI extends Application{
 		grid3.setColumnSpan(checkoutInfo, 2);
 		grid3.setColumnSpan(quantity, 2);
 		grid4.getColumnConstraints().addAll(new ColumnConstraints(70), new ColumnConstraints(150), new ColumnConstraints(150), new ColumnConstraints(100), new ColumnConstraints(60), new ColumnConstraints(100), new ColumnConstraints(80));
+		grid4.setColumnSpan(cbDelivery, 2);
 		
 		//Format table
 		TableView<SKU> table = new TableView<>();
@@ -875,8 +883,9 @@ public class CashierStationGUI extends Application{
 		grid4.setHalignment(lbTotal, HPos.RIGHT);
 		grid4.add(total, 5, 2);
 		grid4.setHalignment(total, HPos.RIGHT);
-		grid4.add(btnCancel, 0, 3);
-		grid4.add(btnSubmit, 1, 3);
+		grid4.add(cbDelivery, 0, 3);
+		grid4.add(btnCancel, 0, 4);
+		grid4.add(btnSubmit, 1, 4);
 		
 		//grid2.setGridLinesVisible(true);
 		//grid3.setGridLinesVisible(true);
@@ -907,6 +916,14 @@ public class CashierStationGUI extends Application{
 			}
 		});
 		
+		//Make check-box functional
+		cbDelivery.setOnAction((e) -> {
+			if(cbDelivery.isSelected()) {
+				grid4.getChildren().remove(btnCancel);
+				grid4.getChildren().remove(btnSubmit);
+			}
+		});
+		
 		//Make buttons functional
 		btnCancel.setOnAction((e) -> {
 			loadHomeScreen(primaryStage);
@@ -914,10 +931,10 @@ public class CashierStationGUI extends Application{
 		
 		btnSelect.setOnAction((e) -> {
 			SKU selectedSKU = (SKU)table.getSelectionModel().getSelectedItem();
-			CheckOutItem item = new CheckOutItem(selectedSKU, checkoutItems, total, itemsInCart);
+			CheckOutItem item = new CheckOutItem(selectedSKU, checkoutItems, total, tax, bottomSubTotal, itemsInCart, myStore);
 			itemsInCart.add(item);
 			checkoutItems.getChildren().add(item.grid);
-			item.setUpGrid(selectedSKU, total, itemsInCart);
+			item.setUpGrid(selectedSKU, total, tax, bottomSubTotal, itemsInCart, myStore);
 			table.getSelectionModel().select(null);
 		});
 		
@@ -1538,27 +1555,31 @@ class CheckOutItem {
 	Button btnRemove = new Button("Remove");
 	SKU sku;
 	double subValue = 0.0;
+	double preTaxTotal;
 	
 	public CheckOutItem() {
 		
 	}
 	
-	public CheckOutItem(SKU sku, VBox container, Label total, ArrayList<CheckOutItem> array) {
+	public CheckOutItem(SKU sku, VBox container, Label total, Label tax, Label sub, ArrayList<CheckOutItem> array,StoreSettings myStore) {
 		this.sku = sku;
 		itemName.setText(sku.getName());
 		itemColor.setText(sku.getColors().get(0));
 		
 		btnRemove.setOnAction((e) -> {
-			total.setText(String.valueOf(currencyFormat.format(Double.parseDouble(total.getText().substring(1)) - subValue)));
+			preTaxTotal = Double.parseDouble(sub.getText().substring(1)) - subValue;
+			sub.setText(String.valueOf(currencyFormat.format(preTaxTotal)));
 			container.getChildren().remove(this.grid);
 			array.remove(this);
 			for (int i = 0; i < array.size(); i++) {
 				array.get(i).rowIndex.setText(String.valueOf(i + 1));
 			}
+			tax.setText(String.valueOf(currencyFormat.format((preTaxTotal) * myStore.getTaxRate())));
+			total.setText(String.valueOf(currencyFormat.format((preTaxTotal) * (myStore.getTaxRate() + 1.0))));
 		});
 	}
 	
-	public void setUpGrid(SKU sku, Label total, ArrayList<CheckOutItem> array) {
+	public void setUpGrid(SKU sku, Label total, Label tax, Label sub, ArrayList<CheckOutItem> array, StoreSettings myStore) {
 		
 		//grid.setGridLinesVisible(true);
 		rowIndex.setText(String.valueOf(array.indexOf(this) + 1));
@@ -1579,10 +1600,16 @@ class CheckOutItem {
 		tfQuantity.setTextFormatter(quantityFormatter);
 		
 		tfQuantity.setOnKeyReleased( e -> {
-			double totValue = Double.parseDouble(total.getText().substring(1)) - subValue;
-			subValue = Double.parseDouble(tfQuantity.getText()) * sku.getRetailPrice();
+			preTaxTotal = Double.parseDouble(sub.getText().substring(1)) - subValue;
+			if(tfQuantity.getText().equals("")) {
+				subValue = 0.0;
+			} else {
+				subValue = Double.parseDouble(tfQuantity.getText()) * sku.getRetailPrice();
+			}
 			subtotal.setText(String.valueOf(currencyFormat.format(subValue)));
-			total.setText(String.valueOf(currencyFormat.format(totValue + subValue)));
+			sub.setText(String.valueOf(currencyFormat.format(preTaxTotal + subValue)));
+			tax.setText(String.valueOf(currencyFormat.format((preTaxTotal + subValue) * myStore.getTaxRate())));
+			total.setText(String.valueOf(currencyFormat.format((preTaxTotal + subValue) * (myStore.getTaxRate() + 1.0))));
 		});
 		
 		tfQuantity.requestFocus();
