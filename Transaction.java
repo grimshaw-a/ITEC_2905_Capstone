@@ -14,6 +14,7 @@ public class Transaction implements java.io.Serializable {
 	private String notes;
 	private boolean isCanceled;
 	private boolean isReturned;
+	private String receiptText = "";
 	
 	
 	//Constructors
@@ -107,11 +108,20 @@ public class Transaction implements java.io.Serializable {
 	public void setReturned(boolean isReturned) {
 		this.isReturned = isReturned;
 	}
+	
+	public String getReceiptText() {
+		return receiptText;
+	}
+
+	public void setReceiptText(String text) {
+		this.receiptText = text;
+	}
 
 	public long getSerialVersionUID() {
 		return serialVersionUID;
 	}
-
+	
+	//Other methods
 	public void processReturn() {
 		
 	}
@@ -122,6 +132,15 @@ public class Transaction implements java.io.Serializable {
 	
 	public void cancelTransaction() {
 		
+	}
+	
+	public void appendToReceiptText(String additionalText) {
+		this.receiptText = this.receiptText + additionalText;
+	}
+	
+	@Override
+	public String toString() {
+		return (String.format(this.getReceiptText()));
 	}
 
 }

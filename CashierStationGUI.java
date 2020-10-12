@@ -16,6 +16,7 @@ import javafx.scene.text.*;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.TextFormatter.Change;
+import java.time.LocalDateTime;
 import java.io.*;
 import java.util.*;
 import java.util.function.*;
@@ -58,6 +59,9 @@ public class CashierStationGUI extends Application{
 		}
 		data = FXCollections.observableArrayList(customers);
 		inventoryData = FXCollections.observableArrayList(inventory);
+		
+		//Send out email reminders
+		sendOutReminderEmails();
 
 		//Load home screen
 		loadHomeScreen(primaryStage);
@@ -79,6 +83,19 @@ public class CashierStationGUI extends Application{
 	
 	public static void main(String[] args) {
 		Application.launch(args);
+	}
+	
+	public void sendOutReminderEmails() {
+		LocalDateTime today = LocalDateTime.now();
+		for(int i = 0; i < customers.size(); i++) {
+			if(customers.get(i).getReminders().size() > 0) {
+				for(int j = 0; j < customers.get(i).getReminders().size(); j++) {
+					if(today.getMonth() == customers.get(i).getReminders().get(j).getDate().getMonth()) {
+						System.out.println("Email reminder sent to " + customers.get(i).getFirstName() + " " + customers.get(i).getLastName() + " regarding upcoming " + customers.get(i).getReminders().get(j).getOccasionType() + " event on " + customers.get(i).getReminders().get(j).getDate() + ".");
+					}
+				}
+			}
+		}
 	}
 	
 	public boolean passwordVerificationWindow(String message) {
@@ -318,27 +335,23 @@ public class CashierStationGUI extends Application{
 		});
 		
 		btnAdd.setOnAction((e) -> {
-			System.out.println(table.getSelectionModel().getSelectedItems());
 			editInventory(primaryStage, null);
 		});
 		
 		btnEdit.setOnAction((e) -> {
-			System.out.println(table.getSelectionModel().getSelectedItem());
 			SKU selectedSKU = (SKU)table.getSelectionModel().getSelectedItem();
 			editInventory(primaryStage, selectedSKU);
 		});
 		
 		btnDelete.setOnAction((e) -> {
-			System.out.println(table.getSelectionModel().getSelectedItems());
 			SKU selectedSKU = (SKU)table.getSelectionModel().getSelectedItem();
 			String message = "Are you sure you want to delete " + selectedSKU.getName() + " from the inventory?";
 			if(passwordVerificationWindow(message)) {
-				System.out.println("True");
 				inventory.remove(selectedSKU);
 				inventoryData = FXCollections.observableArrayList(inventory);
 				table.setItems(inventoryData);
 			} else {
-				System.out.println("This False");
+				System.out.println("Password verification failed.");
 			}
 		});
 		
@@ -505,8 +518,8 @@ public class CashierStationGUI extends Application{
 		
 		//Make colors list functional
 		lvColors.getSelectionModel().selectedItemProperty().addListener(ov -> {
-			System.out.println(lvColors.getSelectionModel().getSelectedIndices());
-			System.out.println(lvColors.getSelectionModel().getSelectedItems());
+			//System.out.println(lvColors.getSelectionModel().getSelectedIndices());
+			//System.out.println(lvColors.getSelectionModel().getSelectedItems());
 		});
 		
 		//Make buttons functional
@@ -515,7 +528,6 @@ public class CashierStationGUI extends Application{
 		});
 				
 		btnSubmit.setOnAction((e) -> {
-			System.out.println(new Date().getTime());
 			boolean abort = false;
 			SKU sku = new SKU();
 			if(tfID.getText().length() == 5) {
@@ -643,7 +655,6 @@ public class CashierStationGUI extends Application{
 		
 		//Filters
 		UnaryOperator<Change> searchPhoneFilter = change -> {
-			System.out.println("filter called");
 			String text = change.getText();
 			String fullText = change.getControlNewText();
 			if(text.matches("[0-9]*") && fullText.length() <= 10) {
@@ -677,7 +688,6 @@ public class CashierStationGUI extends Application{
 				} else {
 					btnSelect.setDisable(false);
 				}
-				System.out.println(table.getSelectionModel().getSelectedItem());
 			}
 		});
 		
@@ -687,7 +697,6 @@ public class CashierStationGUI extends Application{
 		});
 		
 		btnSelect.setOnAction((e) -> {
-			System.out.println("select pressed");
 			Customer selectedCustomer = (Customer)table.getSelectionModel().getSelectedItem();
 			loadCheckout2(primaryStage, selectedCustomer);
 		});
@@ -850,7 +859,7 @@ public class CashierStationGUI extends Application{
 		grid1.add(customerInfo, 0, 0);
 		grid1.add(customerName, 0, 1);
 		grid1.add(customerAddress1, 0, 2);
-		grid1.add(customerAddress2, 0, 3);
+		//grid1.add(customerAddress2, 0, 3);
 		grid1.add(customerCity, 0, 3);
 		grid1.add(allSKUs, 0, 4);
 		rows.getChildren().add(table);
@@ -887,9 +896,6 @@ public class CashierStationGUI extends Application{
 		grid4.add(btnCancel, 0, 4);
 		grid4.add(btnSubmit, 1, 4);
 		
-		//grid2.setGridLinesVisible(true);
-		//grid3.setGridLinesVisible(true);
-		
 		//Narrow search results with text field input
 		tfNameSearch.setOnKeyReleased( e -> {
 			String fullText = tfNameSearch.getText();
@@ -912,7 +918,6 @@ public class CashierStationGUI extends Application{
 				} else {
 					btnSelect.setDisable(false);
 				}
-				System.out.println(table.getSelectionModel().getSelectedItem());
 			}
 		});
 		
@@ -940,18 +945,26 @@ public class CashierStationGUI extends Application{
 		
 		btnSubmit.setOnAction((e) -> {
 			Transaction transaction = new Transaction();
+			transaction.appendToReceiptText("Date: " + LocalDateTime.now().toLocalDate() + "\n");
+			transaction.appendToReceiptText("Time: " + LocalDateTime.now().toLocalTime() + "\n");
+			transaction.appendToReceiptText("Transaction Number: " + transaction.getId() + "\n");
 			transaction.setCustomerID(customer.getID());
+			transaction.appendToReceiptText("Customer: " + customer.getFirstName() + " " + customer.getLastName() + "\n");
 			transaction.setTax(myStore.getTaxRate());
-			transaction.setTotalSale(Double.parseDouble(total.getText()));
+			transaction.setTotalSale(Double.parseDouble(total.getText().substring(1)));
+			transaction.appendToReceiptText("Products purchased:\n");
 			for (int i = 0; i < itemsInCart.size(); i++) {
 				//Create list of items purchased
 				itemsInCart.get(i).sku.setQuantitySold(Integer.valueOf(itemsInCart.get(i).tfQuantity.getText()));
 				transaction.getItems().add(itemsInCart.get(i).sku);
+				transaction.appendToReceiptText(itemsInCart.get(i).sku.getQuantitySold() + " " + itemsInCart.get(i).sku.getName() + "\n");
 				//Update units in stock in inventory
 				inventory.get(inventory.indexOf(itemsInCart.get(i).sku)).reduceUnitsInStock(Integer.valueOf(itemsInCart.get(i).tfQuantity.getText()));
 			}
+			transaction.appendToReceiptText("Sales Tax Rate: " + myStore.getTaxRate() + "\nTotal: " + total.getText());
 			//Add transaction to transaction history
 			transactionHistory.put(transaction.getId(), transaction);
+			System.out.println("Transaction completed succesffully.\n" + transaction);
 			loadHomeScreen(primaryStage);
 		});
 		
@@ -1030,7 +1043,6 @@ public class CashierStationGUI extends Application{
 		});
 		
 		btnEdit.setOnAction((e) -> {
-			System.out.println(table.getSelectionModel().getSelectedItem());
 			Customer selectedCustomer = (Customer)table.getSelectionModel().getSelectedItem();
 			editCustomer(primaryStage, selectedCustomer);
 		});
@@ -1040,16 +1052,14 @@ public class CashierStationGUI extends Application{
 		});
 		
 		btnDelete.setOnAction((e) -> {
-			System.out.println(table.getSelectionModel().getSelectedItems());
 			Customer selectedCustomer = (Customer)table.getSelectionModel().getSelectedItem();
 			String message = "Are you sure you want to delete " + selectedCustomer.getFirstName() + " " + selectedCustomer.getLastName() + " from the inventory?";
 			if(passwordVerificationWindow(message)) {
-				System.out.println("True");
 				customers.remove(selectedCustomer);
 				data = FXCollections.observableArrayList(customers);
 				table.setItems(data);
 			} else {
-				System.out.println("This False");
+				System.out.println("Password validation failed.");
 			}
 		});
 		
@@ -1071,7 +1081,9 @@ public class CashierStationGUI extends Application{
 	}
 	
 	public void editCustomer(Stage primaryStage, Customer existingCustomer) {
-		System.out.println(existingCustomer);
+		//Reminders array
+		ArrayList<ReminderFrame> remindersArray = new ArrayList<>();
+		
 		//Create layout elements
 		ScrollPane scrollPane = new ScrollPane();
 		VBox main = new VBox();
@@ -1083,11 +1095,6 @@ public class CashierStationGUI extends Application{
 		pane.setAlignment(Pos.CENTER);
 		pane.setHgap(10);
 		pane.setVgap(15);
-		
-		GridPane pane2 = new GridPane();
-		pane2.setAlignment(Pos.CENTER);
-		pane2.setHgap(10);
-		pane2.setVgap(15);
 		
 		GridPane buttonsHolder = new GridPane();
 		buttonsHolder.setAlignment(Pos.CENTER);
@@ -1111,16 +1118,14 @@ public class CashierStationGUI extends Application{
 		TextField tfState = new TextField();
 		TextField tfZipcode = new TextField();
 		TextField tfCreditCard = new PasswordField();
-		TextField tfRecipient = new TextField();
-		TextField tfDate = new TextField();
-		ComboBox cbOccasion = new ComboBox();
 		
 		//Create Buttons
-		Button btnAddReminder = new Button("Add a Reminder");
+		Button btnAddReminder = new Button("+ Reminder");
 		Button btnCancel = new Button("Cancel");
 		Button btnSubmit = new Button("Submit");
 		
 		//Add TextFields and Labels to customer info GridPane
+		pane.add(customerInfo, 0, 0);
 		pane.add(new Label("First Name:"), 0, 1);
 		pane.add(tfFirstName, 1, 1);
 		pane.add(new Label("Last Name:"), 2, 1);
@@ -1140,14 +1145,7 @@ public class CashierStationGUI extends Application{
 		pane.add(tfZipcode, 1, 7);
 		pane.add(new Label("Credit Card:"), 0, 8);
 		pane.add(tfCreditCard, 1, 8);
-		
-		//Add TextFields and Labels to reminders GridPane
-		pane2.add(new Label("Date:"), 0, 0);
-		pane2.add(tfDate, 1, 0);
-		pane2.add(new Label("Occasion:"), 2, 0);
-		pane2.add(cbOccasion, 3, 0);
-		pane2.add(new Label("Recipient:"), 0, 1);
-		pane2.add(tfRecipient, 1, 1);
+		pane.add(remindersLb, 0, 9);
 		
 		//Add Buttons to GridPane
 		buttonsHolder.add(btnAddReminder, 0, 0);
@@ -1156,18 +1154,28 @@ public class CashierStationGUI extends Application{
 		
 		//Add ColumnConstraints
 		pane.getColumnConstraints().addAll(new ColumnConstraints(100), new ColumnConstraints(160), new ColumnConstraints(80), new ColumnConstraints(160));
-		pane2.getColumnConstraints().addAll(new ColumnConstraints(100), new ColumnConstraints(160), new ColumnConstraints(80), new ColumnConstraints(160));
 		buttonsHolder.getColumnConstraints().addAll(new ColumnConstraints(100), new ColumnConstraints(160), new ColumnConstraints(80), new ColumnConstraints(160));
 		buttonsHolder.setColumnSpan(btnAddReminder, 2);
 		pane.setColumnSpan(tfAddressFirstLine, 2);
 		pane.setColumnSpan(tfAddressSecondLine, 2);
 		pane.setColumnSpan(tfCreditCard, 2);
+		pane.setColumnSpan(remindersLb, 2);
+		pane.setColumnSpan(customerInfo, 2);
 		
 		//Add headers and grids to VBox
-		main.getChildren().add(customerInfo);
 		main.getChildren().add(pane);
-		main.getChildren().add(remindersLb);
-		main.getChildren().add(pane2);
+		if(existingCustomer != null) {
+			for(int i = 0; i < existingCustomer.getReminders().size(); i++) {
+				ReminderFrame reminder1 = new ReminderFrame();
+				remindersArray.add(reminder1);
+				reminder1.setUpGrid(main, remindersArray);
+				reminder1.dpDate.setValue(existingCustomer.getReminders().get(i).getDate());
+				reminder1.cbOccasion.setValue(existingCustomer.getReminders().get(i).getOccasionType());
+				reminder1.tfFirstName.setText(existingCustomer.getReminders().get(i).getRecipientFirstName());
+				reminder1.tfLastName.setText(existingCustomer.getReminders().get(i).getRecipientLastName());
+				main.getChildren().add(reminder1.grid);
+			}
+		}
 		main.getChildren().add(buttonsHolder);
 		scrollPane.setContent(main);
 		
@@ -1219,6 +1227,15 @@ public class CashierStationGUI extends Application{
 		tfCreditCard.setTextFormatter(creditCardFormatter);
 		
 		//Make buttons functional
+		btnAddReminder.setOnAction((e) -> {
+			ReminderFrame reminder1 = new ReminderFrame();
+			remindersArray.add(reminder1);
+			reminder1.setUpGrid(main, remindersArray);
+			main.getChildren().remove(buttonsHolder);
+			main.getChildren().add(reminder1.grid);
+			main.getChildren().add(buttonsHolder);
+		});
+		
 		btnCancel.setOnAction((e) -> {
 			loadCustomers(primaryStage);
 		});
@@ -1245,6 +1262,14 @@ public class CashierStationGUI extends Application{
 			customer.setState(tfState.getText());
 			customer.setZipcode(tfZipcode.getText());
 			customer.setCreditCard(tfCreditCard.getText());
+			for(int i = 0; i < remindersArray.size(); i++) {
+				Reminder reminder = new Reminder();
+				reminder.setDate(remindersArray.get(i).dpDate.getValue());
+				reminder.setOccasionType((String)remindersArray.get(i).cbOccasion.getValue());
+				reminder.setRecipientFirstName(remindersArray.get(i).tfFirstName.getText());
+				reminder.setRecipientLastName(remindersArray.get(i).tfLastName.getText());
+				customer.addReminder(reminder);
+			}
 			if(existingCustomer != null) {
 				customers.remove(existingCustomer);
 			}
@@ -1276,64 +1301,35 @@ public class CashierStationGUI extends Application{
 		buttonsHolder.setHgap(10);
 		buttonsHolder.setVgap(15);
 		
-		GridPane pane2 = new GridPane();
-		pane2.setAlignment(Pos.CENTER);
-		pane2.setHgap(10);
-		pane2.setVgap(15);
-		
-		GridPane buttonsHolder2 = new GridPane();
-		buttonsHolder2.setAlignment(Pos.CENTER);
-		buttonsHolder2.setHgap(10);
-		buttonsHolder2.setVgap(15);
-		
 		//Create Labels
 		Label storeInfo = new Label("Store Information");
 		storeInfo.setFont(Font.font("Arial", FontWeight.BOLD, 20));
-		Label adminInfo = new Label("Admin Information");
-		adminInfo.setFont(Font.font("Arial", FontWeight.BOLD, 20));
 		
 		//Create Buttons
 		Button btnBack = new Button("Back");
 		Button btnEdit = new Button("Edit");
-		Button btnEditAdmin = new Button("Edit ID#s");
 		
 		//Display store information
-		pane.add(new Label(myStore.getStoreName()), 0, 0);
-		pane.add(new Label(myStore.getAddressFirstLine()), 0, 1);
-		pane.add(new Label(myStore.getAddressSecondLine()), 0, 2);
-		pane.add(new Label(myStore.getCity() + ", " + myStore.getState() + " " + myStore.getZipcode()), 0, 3);
-		pane.add(new Label(myStore.getPhone()), 0, 4);
-		pane.add(new Label(myStore.getEmail()), 0, 5);
-		pane.add(new Label(myStore.getWebsite()), 0, 6);
-		
-		//Display SKU, customer, and employee ID value
-		pane2.add(new Label("Next SKU Number:"), 0, 0);
-		pane2.add(new Label(Integer.toString(myStore.getNextSKUNumber())), 1, 0);
-		pane2.add(new Label("Next Customer ID:"), 0, 1);
-		pane2.add(new Label(Integer.toString(myStore.getNextCustomerID())), 1, 1);
-		pane2.add(new Label("Next Employee ID:"), 0, 2);
-		pane2.add(new Label(Integer.toString(myStore.getNextEmployeeID())), 1, 2);
-		pane2.add(new Label("Next Incident ID:"), 0, 3);
-		pane2.add(new Label(Integer.toString(myStore.getNextIncidentID())), 1, 3);
+		pane.add(storeInfo, 0, 0);
+		pane.add(new Label(myStore.getStoreName()), 0, 1);
+		pane.add(new Label(myStore.getAddressFirstLine()), 0, 2);
+		pane.add(new Label(myStore.getAddressSecondLine()), 0, 3);
+		pane.add(new Label(myStore.getCity() + ", " + myStore.getState() + " " + myStore.getZipcode()), 0, 4);
+		pane.add(new Label(myStore.getPhone()), 0, 5);
+		pane.add(new Label(myStore.getEmail()), 0, 6);
+		pane.add(new Label(myStore.getWebsite()), 0, 7);
 		
 		//Add Buttons to GridPane
 		buttonsHolder.add(btnBack, 0, 0);
 		buttonsHolder.add(btnEdit, 1, 0);
-		buttonsHolder2.add(btnEditAdmin, 0, 0);
 		
 		//Add ColumnConstraints
 		pane.getColumnConstraints().addAll(new ColumnConstraints(300), new ColumnConstraints(60), new ColumnConstraints(80), new ColumnConstraints(60));
 		buttonsHolder.getColumnConstraints().addAll(new ColumnConstraints(60), new ColumnConstraints(200), new ColumnConstraints(80), new ColumnConstraints(160));
-		pane2.getColumnConstraints().addAll(new ColumnConstraints(200), new ColumnConstraints(160), new ColumnConstraints(80), new ColumnConstraints(60));
-		buttonsHolder2.getColumnConstraints().addAll(new ColumnConstraints(160), new ColumnConstraints(100), new ColumnConstraints(80), new ColumnConstraints(160));
-		
+
 		//Add headers and grids to VBox
-		main.getChildren().add(storeInfo);
 		main.getChildren().add(pane);
 		main.getChildren().add(buttonsHolder);
-		main.getChildren().add(adminInfo);
-		main.getChildren().add(pane2);
-		main.getChildren().add(buttonsHolder2);
 		scrollPane.setContent(main);
 		
 		//Make buttons functional
@@ -1391,23 +1387,24 @@ public class CashierStationGUI extends Application{
 		Button btnSubmit = new Button("Submit");
 		
 		//Add TextFields and Labels to customer info GridPane
-		pane.add(new Label("Store Name:"), 0, 0);
-		pane.add(tfName, 1, 0);
-		pane.add(new Label("Store Address:"), 0, 1);
-		pane.add(tfAddressFirstLine, 1, 1);
-		pane.add(tfAddressSecondLine, 1, 2);
-		pane.add(new Label("City:"), 0, 3);
-		pane.add(tfCity, 1, 3);
-		pane.add(new Label("State:"), 2, 3);
-		pane.add(tfState, 3, 3);
-		pane.add(new Label("Zipcode:"), 0, 4);
-		pane.add(tfZipcode, 1, 4);
-		pane.add(new Label("Phone:"), 0, 5);
-		pane.add(tfPhoneNumber, 1, 5);
-		pane.add(new Label("Email:"), 0, 6);
-		pane.add(tfEmail, 1, 6);
-		pane.add(new Label("Website:"), 0, 7);
-		pane.add(tfWebsite, 1, 7);
+		pane.add(storeInfo, 0, 0);
+		pane.add(new Label("Store Name:"), 0, 1);
+		pane.add(tfName, 1, 1);
+		pane.add(new Label("Store Address:"), 0, 2);
+		pane.add(tfAddressFirstLine, 1, 2);
+		pane.add(tfAddressSecondLine, 1, 3);
+		pane.add(new Label("City:"), 0, 4);
+		pane.add(tfCity, 1, 4);
+		pane.add(new Label("State:"), 2, 4);
+		pane.add(tfState, 3, 4);
+		pane.add(new Label("Zipcode:"), 0, 5);
+		pane.add(tfZipcode, 1, 5);
+		pane.add(new Label("Phone:"), 0, 6);
+		pane.add(tfPhoneNumber, 1, 6);
+		pane.add(new Label("Email:"), 0, 7);
+		pane.add(tfEmail, 1, 7);
+		pane.add(new Label("Website:"), 0, 8);
+		pane.add(tfWebsite, 1, 8);
 
 		
 		//Add Buttons to GridPane
@@ -1419,9 +1416,9 @@ public class CashierStationGUI extends Application{
 		buttonsHolder.getColumnConstraints().addAll(new ColumnConstraints(100), new ColumnConstraints(160), new ColumnConstraints(80), new ColumnConstraints(160));
 		pane.setColumnSpan(tfAddressFirstLine, 2);
 		pane.setColumnSpan(tfAddressSecondLine, 2);
+		pane.setColumnSpan(storeInfo, 2);
 		
 		//Add headers and grids to VBox
-		main.getChildren().add(storeInfo);
 		main.getChildren().add(pane);
 		main.getChildren().add(buttonsHolder);
 		scrollPane.setContent(main);
@@ -1541,6 +1538,55 @@ public class CashierStationGUI extends Application{
 		} 
 		return transactionHistory;
 	}
+}
+
+class ReminderFrame {
+	
+	//Options for combo box
+	private List<String> occasionList = Arrays.asList("Anniversary", "Birthday", "Other");
+	ObservableList<String> occasions = FXCollections.observableArrayList(occasionList);
+		
+	//Create graphic elements	
+	GridPane grid = new GridPane();
+	Label lbFirstName = new Label("First Name:");
+	TextField tfFirstName = new TextField();
+	Label lbLastName = new Label("Last Name:");
+	TextField tfLastName = new TextField();
+	Label lbDate = new Label("Date:");
+	DatePicker dpDate = new DatePicker();
+	Label lbOccasion = new Label("Occasion:");
+	ComboBox cbOccasion = new ComboBox(occasions);
+	Button btnRemove = new Button("Remove");
+	Customer customer = new Customer();
+	
+	public ReminderFrame() {
+	}
+	
+	public ReminderFrame(Customer customer) {
+		this.customer = customer;
+	}
+	
+	public void setUpGrid(VBox main, ArrayList<ReminderFrame> array) {
+		grid.add(lbDate, 0, 0);
+		grid.add(dpDate, 1, 0);
+		grid.add(lbOccasion, 2, 0);
+		grid.add(cbOccasion, 3, 0);
+		grid.add(lbFirstName, 0, 1);
+		grid.add(tfFirstName, 1, 1);
+		grid.add(lbLastName, 2, 1);
+		grid.add(tfLastName, 3, 1);
+		grid.add(btnRemove, 0, 2);
+		grid.setAlignment(Pos.CENTER);
+		grid.setHgap(10);
+		grid.setVgap(15);
+		grid.getColumnConstraints().addAll(new ColumnConstraints(100), new ColumnConstraints(160), new ColumnConstraints(80), new ColumnConstraints(160));
+	
+		btnRemove.setOnAction((e) -> {
+			array.remove(this);
+			main.getChildren().remove(this.grid);
+		});
+	}
+	
 }
 
 class CheckOutItem {
