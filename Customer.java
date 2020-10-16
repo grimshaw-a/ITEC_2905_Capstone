@@ -1,23 +1,30 @@
 import java.util.ArrayList;
 import java.time.LocalDate;
 
-/** The customer class contains personal and billing information for one customer. Each customer 
- * is given a unique number id. Methods should use this id to access customers instead of by name in case of duplicate names.*/
+/**
+ * <p>The Customer class contains personal and billing information for one customer.</p><p>Each customer 
+ * is given a unique number id. Methods should use this id to access customers instead of by name 
+ * in case of duplicate names.</p>
+ * @author Adam Grimshaw<br>
+ * Date: 10/14/2020<br>
+ * Course: ITEC 2905, Capstone Project, Southwest Technical College 
+ */
 public class Customer implements java.io.Serializable {
-	//Personal and billing information for customer
+	//Serializable id (DO NOT CHANGE THIS NUMBER. THE DATABASE WILL BECOME UNREADABLE.)
 	private static final long serialVersionUID = 635927;
+	
+	//Personal and billing information for customer
 	private int id;
 	private String firstName;
 	private String lastName;
 	private String phone;
 	private String email;
 	private String addressFirstLine;
-	private String addressSecondLine;
+	private String addressSecondLine = "";
 	private String city;
 	private String state;
 	private String zipcode;
 	private String creditCard;
-	private String paypal;
 	private ArrayList<Integer> transactionHistory = new ArrayList<>();
 	private ArrayList<Reminder> reminders = new ArrayList<>();
 	
@@ -113,14 +120,6 @@ public class Customer implements java.io.Serializable {
 	public void setCreditCard(String c) {
 		this.creditCard = c;
 	}
-	
-	public String getPaypal() {
-		return this.paypal;
-	}
-	
-	public void setPaypal(String p) {
-		this.paypal = p;
-	}
 
 	public ArrayList<Integer> getTransactionHistory() {
 		return transactionHistory;
@@ -143,12 +142,16 @@ public class Customer implements java.io.Serializable {
 	}
 
 	// Methods
-	/** Creates string with mailing address*/
+	/**
+	 * This method formats a customer's information as a mailing address.
+	 * @return Returns a String formatted to be printed as a mailing address for a customer
+	 * taking into account that not every mailing address has a secondary street line.
+	 */
 	public String formatMailingAddress() {
-		if(this.addressSecondLine == null ) {
+		if(this.addressSecondLine.equals("")) {
 			return (this.firstName + " " + this.lastName + '\n' + this.addressFirstLine + '\n' + this.city + ", " + this.state + " " + this.zipcode);
 		} else {
-			return (this.firstName + " " + this.lastName + '\n' + this.addressSecondLine + '\n' + this.city + ", " + this.state + " " + this.zipcode);
+			return (this.firstName + " " + this.lastName + '\n' + this.addressFirstLine + '\n' + this.addressSecondLine + '\n' + this.city + ", " + this.state + " " + this.zipcode);
 		}
 	}
 	
@@ -158,6 +161,12 @@ public class Customer implements java.io.Serializable {
 	}
 }
 
+/**
+ * The Reminder class stores information about an important occasion the customer wants to be reminded
+ * about so that he won't forget to buy flowers. Properties include a date, the type of occasion, and
+ * to whom the flowers should be directed.
+ * @author Adam Grimshaw
+ */
 class Reminder implements java.io.Serializable {
 	//Define serial id
 	private static final long serialVersionUID = 585123;

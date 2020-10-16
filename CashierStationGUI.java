@@ -2,27 +2,35 @@ import javafx.application.Application;
 import javafx.stage.Stage;
 import javafx.stage.Modality;
 import javafx.geometry.Pos;
+import javafx.geometry.VPos;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.text.*;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.TextFormatter.Change;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.io.*;
 import java.util.*;
 import java.util.function.*;
 import javafx.collections.*;
 import java.text.NumberFormat;
+import java.text.DecimalFormat;
 
+/**
+ * <p>This program is intended for use at a checkout register in a floral shop. It is designed
+ * to track inventory, manage a database of customers, and complete sales transactions. It 
+ * implements several additional custom classes including Customer, SKU, StoreSettings, and 
+ * Transaction.</p> <p>This class contains the main method, and is the single launch point
+ * for this software.</p>
+ * @author Adam Grimshaw<br>
+ * Date: 10/14/2020<br>
+ * Course: ITEC 2905, Capstone Project, Southwest Technical College 
+ */
 public class CashierStationGUI extends Application{
 	//Screen size
 	final int SCREEN_WIDTH = 800;
@@ -32,23 +40,28 @@ public class CashierStationGUI extends Application{
 	private List<String> colorList = Arrays.asList("Red", "Orange", "Yellow", "Green", "Blue", "Purple", "White", "Peach", "Cream", "Lavendar", "Periwinkle", "Pink", "Sea Foam", "Magenta", "Pistachio");
 	ObservableList<String> color = FXCollections.observableArrayList(colorList);
 	
-	//Populate store settings
+	//Contains store specific information
 	StoreSettings myStore = new StoreSettings();
 	
-	//Populate array of customers
+	//Create empty array for holding customer database
 	ArrayList<Customer> customers = new ArrayList<>();
 	ObservableList<Customer> data = FXCollections.observableArrayList();
 	
-	//Populate inventory
+	//Create empty array to hold inventory information
 	ArrayList<SKU> inventory = new ArrayList<>();
 	ObservableList<SKU> inventoryData = FXCollections.observableArrayList();
 	
-	//Populate transaction history
+	//Create empty map to hold transaction history
 	HashMap<Long, Transaction> transactionHistory = new HashMap<>();
 	
+	/**
+	 * The start method first imports all store specific settings from external .dat files, including
+	 * store settings, customer database, inventory information, and transaction history. Next, it
+	 * calls a method to send out reminder emails. Finally, it loads the home screen of the GUI.
+	 */
 	@Override
 	public void start(Stage primaryStage) {
-		//Import store settings, inventory data, and customer data
+		//Import store settings, inventory data, customer data, and transactions
 		try {
 			myStore.readStoreSettingsFromFile();
 			customers = readCustomerListFromFile();
@@ -67,6 +80,10 @@ public class CashierStationGUI extends Application{
 		loadHomeScreen(primaryStage);
 	}
 	
+	/**
+	 * The stop method is called when the window is closed. All store information, including inventory
+	 * customer database, and transactions are exported to external files.
+	 */
 	@Override
 	public  void stop() {
 		try {
@@ -81,10 +98,22 @@ public class CashierStationGUI extends Application{
 		System.out.println("Stage is closing.");
 	}
 	
+	/**
+	 * The main method. It immediately calls the start method.
+	 * @param args Not used.
+	 */
 	public static void main(String[] args) {
 		Application.launch(args);
 	}
 	
+	/**
+	 * This feature has not been fully developed yet. The idea is that customers can request reminders
+	 * for upcoming or annual events. Currently, this feature combs the customer database and searches for
+	 * reminders scheduled for the current month. It is called in the start method. In a fully functional 
+	 * version, this method would send out a reminder email only once, two weeks before the date. And emails
+	 * would be custom made to feature products that would be appealing to the specific customer. As for now, 
+	 * the current method stands in as a place holder.
+	 */
 	public void sendOutReminderEmails() {
 		LocalDateTime today = LocalDateTime.now();
 		for(int i = 0; i < customers.size(); i++) {
@@ -96,8 +125,21 @@ public class CashierStationGUI extends Application{
 				}
 			}
 		}
+		System.out.println();
 	}
 	
+	/**
+	 * This method acts as a gate keeper to restrict access to certain functions. When called, it
+	 * launches a new window and freezes action on the main window. If the password is entered
+	 * correctly, the window closes and the main window proceeds to call the requested method.
+	 * Otherwise, when the window is closed, the main window is restored to full functionality, but
+	 * the requested method is not called. To implement this method, use this as the conditional in
+	 * an "if" statement. If this method returns true (password is entered correctly), then do x.
+	 * Else (if the correct password is not entered), do nothing.
+	 * @param message A custom message displayed in the new window. Describes what will happen if 
+	 * the password is entered correctly.
+	 * @return Returns a boolean.
+	 */
 	public boolean passwordVerificationWindow(String message) {
 		myStore.setAdminPassword("1234");
 		
@@ -144,6 +186,11 @@ public class CashierStationGUI extends Application{
 		return myStore.getPasswordCorrect();	
 	}
 	
+	/**
+	 * Loads the home screen of the GUI. This screen features six buttons that allow the user
+	 * to navigate through all the features of the program.
+	 * @param primaryStage The main window of the GUI.
+	 */
 	public void loadHomeScreen(Stage primaryStage) {
 		//Define size of buttons
 		final int BTN_WIDTH = 200;
@@ -160,8 +207,8 @@ public class CashierStationGUI extends Application{
 		Button btnCheckout = new Button("Checkout");
 		Button btnInventory = new Button("Inventory");
 		Button btnCustomers = new Button("Customers");
-		Button btnOrders = new Button("Orders");
-		Button btnAdmin = new Button("Manager");
+		Button btnDelivery = new Button("Deliveries");
+		Button btnAdmin = new Button("Admin");
 		Button btnReturns = new Button("Returns");
 		
 		//Set button size
@@ -171,8 +218,8 @@ public class CashierStationGUI extends Application{
 		btnInventory.setMinHeight(BTN_HEIGHT);
 		btnCustomers.setMinWidth(BTN_WIDTH);
 		btnCustomers.setMinHeight(BTN_HEIGHT);
-		btnOrders.setMinWidth(BTN_WIDTH);
-		btnOrders.setMinHeight(BTN_HEIGHT);
+		btnDelivery.setMinWidth(BTN_WIDTH);
+		btnDelivery.setMinHeight(BTN_HEIGHT);
 		btnAdmin.setMinWidth(BTN_WIDTH);
 		btnAdmin.setMinHeight(BTN_HEIGHT);
 		btnReturns.setMinWidth(BTN_WIDTH);
@@ -183,7 +230,7 @@ public class CashierStationGUI extends Application{
 		pane.add(btnCustomers, 1, 0);
 		pane.add(btnCheckout, 2, 0);
 		pane.add(btnAdmin, 0, 1);
-		pane.add(btnOrders, 1, 1);
+		pane.add(btnDelivery, 1, 1);
 		pane.add(btnReturns, 2, 1);
 		
 		//Make buttons functional
@@ -200,7 +247,11 @@ public class CashierStationGUI extends Application{
 		});
 		
 		btnAdmin.setOnAction((e) -> {
-			managerControls(primaryStage);
+			adminControls(primaryStage);
+		});
+		
+		btnDelivery.setOnAction((e) -> {
+			loadDeliveries(primaryStage);
 		});
 		
 		//Load scene
@@ -210,6 +261,13 @@ public class CashierStationGUI extends Application{
 		primaryStage.show();
 	}
 	
+	/**
+	 * Loads the inventory screen. This screen features a table showing all SKUs, regardless
+	 * of if they are currently in stock. Options to edit, add, or delete SKUs are provided.
+	 * Clicking the edit or add button launches the edit inventory screen. Deletion requires
+	 * password verification.
+	 * @param primaryStage The main window of the GUI.
+	 */
 	public void viewInventory(Stage primaryStage) {
 		//Create root pane and layout objects
 		StackPane pane = new StackPane();
@@ -257,7 +315,6 @@ public class CashierStationGUI extends Application{
 		buttonHolder.getChildren().addAll(btnBack, btnAdd, btnEdit, btnDelete);
 		btnEdit.setDisable(true);
 		btnDelete.setDisable(true);
-		
 		
 		//Load data to table
 		inventoryData = FXCollections.observableArrayList(inventory);
@@ -372,6 +429,16 @@ public class CashierStationGUI extends Application{
 		primaryStage.show();
 	}
 	
+	/**
+	 * Loads a screen to edit the attributes of a SKU. Features a fair bit of text field validation
+	 * to ensure that essential information is entered and entered correctly. Prevents the user from
+	 * creating duplicate SKU id numbers in the inventory. Additional regex needs to be applied to
+	 * price fields.
+	 * @param primaryStage The main window of the GUI.
+	 * @param selectedSKU A SKU object. This argument can also be passed as a null value. If this 
+	 * variable is null, all text fields will be blank (add new SKU). Otherwise, text fields will 
+	 * be populated with the attributes of the selected SKU (edit SKU).
+	 */
 	public void editInventory(Stage primaryStage, SKU selectedSKU) {
 		//Create layout elements
 		StackPane pane = new StackPane();
@@ -433,12 +500,15 @@ public class CashierStationGUI extends Application{
 		grid1.setColumnSpan(nameWarning, 2);
 		lvColors.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 		
+		//Formatting for currency fields
+		NumberFormat decimalFormat = new DecimalFormat("#0.00");
+		
 		//Load select SKU information
 		if(selectedSKU != null) {
 			tfID.setText(selectedSKU.getId());
 			tfName.setText(selectedSKU.getName());
-			tfWholesale.setText(Double.toString(selectedSKU.getWholesaleCost()));
-			tfRetail.setText(Double.toString(selectedSKU.getRetailPrice()));
+			tfWholesale.setText(decimalFormat.format(selectedSKU.getWholesaleCost()));
+			tfRetail.setText(decimalFormat.format(selectedSKU.getRetailPrice()));
 			tfShelfLife.setText(Integer.toString(selectedSKU.getShelfLifeInDays()));
 			tfCurrentStock.setText(Integer.toString(selectedSKU.getUnitsInStock()));
 			for (int i = 0; i < selectedSKU.getColors().size(); i++) {
@@ -516,12 +586,6 @@ public class CashierStationGUI extends Application{
 		TextFormatter<String> retailFormatter = new TextFormatter<>(retailFilter);
 		tfRetail.setTextFormatter(retailFormatter);
 		
-		//Make colors list functional
-		lvColors.getSelectionModel().selectedItemProperty().addListener(ov -> {
-			//System.out.println(lvColors.getSelectionModel().getSelectedIndices());
-			//System.out.println(lvColors.getSelectionModel().getSelectedItems());
-		});
-		
 		//Make buttons functional
 		btnCancel.setOnAction((e) -> {
 			viewInventory(primaryStage);
@@ -562,6 +626,16 @@ public class CashierStationGUI extends Application{
 		primaryStage.show();
 	}
 	
+	/**
+	 * Loads the first of two checkout screens. On this screen, the user selects a customer
+	 * for checkout. If the customer is not currently in the system, they can be added by
+	 * clicking the add customer button. This launches the edit customer screen. In a future
+	 * update, the user will be returned to the checkout screen after adding a customer. Currently,
+	 * the user must manually navigate back to checkout after adding a new customer. Additionally,
+	 * a skip button exists, to allow for anonymous checkout. This feature is not yet functional,
+	 * and the button does nothing.
+	 * @param primaryStage The main window of the GUI.
+	 */
 	public void loadCheckout(Stage primaryStage) {
 		//Create layout elements
 		StackPane pane = new StackPane();
@@ -712,9 +786,22 @@ public class CashierStationGUI extends Application{
 		primaryStage.show();
 	}
 	
+	/**
+	 * Loads the second of two checkout screens. Transaction can be completed by selecting
+	 * items to be purchased and entering a quantity. Tax is automatically calculated. The
+	 * purchase can be scheduled for delivery. On submission, a transaction object will be created
+	 * and added to the transaction history map.
+	 * @param primaryStage The main window of the GUI.
+	 * @param customer A customer object. The customer id number is recorded in the transaction
+	 * object.
+	 */
 	public void loadCheckout2(Stage primaryStage, Customer customer) {
 		//Array list for checkout items
 		ArrayList<CheckOutItem> itemsInCart = new ArrayList<>();
+		
+		//Options for hour combo box
+		List<String> hourList = Arrays.asList("07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00");
+		ObservableList<String> hours = FXCollections.observableArrayList(hourList);
 		
 		//Create layout elements
 		ScrollPane pane = new ScrollPane();
@@ -738,6 +825,14 @@ public class CashierStationGUI extends Application{
 		grid4.setAlignment(Pos.CENTER);
 		grid4.setHgap(10);
 		grid4.setVgap(15);
+		GridPane buttonsHolder = new GridPane();
+		buttonsHolder.setAlignment(Pos.CENTER);
+		buttonsHolder.setHgap(10);
+		buttonsHolder.setVgap(15);
+		GridPane grid5 = new GridPane();
+		grid5.setAlignment(Pos.CENTER);
+		grid5.setHgap(10);
+		grid5.setVgap(15);
 				
 		//Create Labels
 		Label customerInfo = new Label("Customer Information");
@@ -761,9 +856,31 @@ public class CashierStationGUI extends Application{
 		lbTotal.setFont(Font.font("Arial", FontWeight.BOLD, 16));
 		Label total = new Label("$0.00");
 		total.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-		CheckBox cbDelivery = new CheckBox("Make Delivery?");
+		CheckBox cbDelivery = new CheckBox("Deliver this order");
 		Label lbDeliverTo = new Label("Deliver To:");
-		lbDeliverTo.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+		lbDeliverTo.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+		Label lbDeliveryDate = new Label("On Date:");
+		Label lbDeliveryTime = new Label("At Hour:");
+		Label lbRecipientFirstName = new Label("First Name:");
+		Label lbRecipientLastName = new Label("Last Name:");
+		Label lbRecipientAddress = new Label("Address:");
+		Label lbRecipientCity = new Label("City:");
+		Label lbRecipientState = new Label("State:");
+		Label lbRecipientZipcode = new Label("Zipcode:");
+		Label lbRecipientPhone = new Label("Phone:");
+		Label lbMessage = new Label("Message:");
+		DatePicker dpDeliveryDate = new DatePicker();
+		ComboBox cbHourPicker = new ComboBox(hours);
+		TextField tfRecipientFirstName = new TextField();
+		TextField tfRecipientLastName = new TextField();
+		TextField tfRecipientAddress1 = new TextField();
+		TextField tfRecipientAddress2 = new TextField();
+		TextField tfRecipientCity = new TextField();
+		TextField tfRecipientState = new TextField();
+		TextField tfRecipientZipcode = new TextField();
+		TextField tfRecipientPhone = new TextField();
+		TextArea taMessage = new TextArea();
+		taMessage.setWrapText(true);
 		
 		//Create text fields
 		TextField tfNameSearch = new TextField();
@@ -787,7 +904,14 @@ public class CashierStationGUI extends Application{
 		grid3.setColumnSpan(checkoutInfo, 2);
 		grid3.setColumnSpan(quantity, 2);
 		grid4.getColumnConstraints().addAll(new ColumnConstraints(70), new ColumnConstraints(150), new ColumnConstraints(150), new ColumnConstraints(100), new ColumnConstraints(60), new ColumnConstraints(100), new ColumnConstraints(80));
-		grid4.setColumnSpan(cbDelivery, 2);
+		grid4.setColumnSpan(lbRecipientFirstName, 2);
+		buttonsHolder.getColumnConstraints().addAll(new ColumnConstraints(70), new ColumnConstraints(150), new ColumnConstraints(150), new ColumnConstraints(100), new ColumnConstraints(60), new ColumnConstraints(100), new ColumnConstraints(80));
+		buttonsHolder.setColumnSpan(cbDelivery, 2);
+		grid5.getColumnConstraints().addAll(new ColumnConstraints(70), new ColumnConstraints(150), new ColumnConstraints(80), new ColumnConstraints(170), new ColumnConstraints(60), new ColumnConstraints(100), new ColumnConstraints(80));
+		grid5.setColumnSpan(lbDeliverTo, 2);
+		grid5.setColumnSpan(tfRecipientAddress1, 2);
+		grid5.setColumnSpan(tfRecipientAddress2, 2);
+		grid5.setColumnSpan(taMessage, 3);
 		
 		//Format table
 		TableView<SKU> table = new TableView<>();
@@ -892,9 +1016,33 @@ public class CashierStationGUI extends Application{
 		grid4.setHalignment(lbTotal, HPos.RIGHT);
 		grid4.add(total, 5, 2);
 		grid4.setHalignment(total, HPos.RIGHT);
-		grid4.add(cbDelivery, 0, 3);
-		grid4.add(btnCancel, 0, 4);
-		grid4.add(btnSubmit, 1, 4);
+		rows.getChildren().add(buttonsHolder);
+		buttonsHolder.add(cbDelivery, 0, 0);
+		buttonsHolder.add(btnCancel, 0, 1);
+		buttonsHolder.add(btnSubmit, 1, 1);
+		grid5.add(lbDeliverTo, 0, 0);
+		grid5.add(lbDeliveryDate, 0, 1);
+		grid5.add(dpDeliveryDate, 1, 1);
+		grid5.add(lbDeliveryTime, 2, 1);
+		grid5.add(cbHourPicker, 3, 1);
+		grid5.add(lbRecipientFirstName, 0, 2);
+		grid5.add(tfRecipientFirstName, 1, 2);
+		grid5.add(lbRecipientLastName, 2, 2);
+		grid5.add(tfRecipientLastName, 3, 2);
+		grid5.add(lbRecipientAddress, 0, 3);
+		grid5.add(tfRecipientAddress1, 1, 3);
+		grid5.add(tfRecipientAddress2, 1, 4);
+		grid5.add(lbRecipientCity, 0, 5);
+		grid5.add(tfRecipientCity, 1, 5);
+		grid5.add(lbRecipientState, 2, 5);
+		grid5.add(tfRecipientState, 3, 5);
+		grid5.add(lbRecipientZipcode, 4, 5);
+		grid5.add(tfRecipientZipcode, 5, 5);
+		grid5.add(lbRecipientPhone, 0, 6);
+		grid5.add(tfRecipientPhone, 1, 6);
+		grid5.add(lbMessage, 0, 7);
+		grid5.setValignment(lbMessage, VPos.TOP);
+		grid5.add(taMessage, 1, 7);
 		
 		//Narrow search results with text field input
 		tfNameSearch.setOnKeyReleased( e -> {
@@ -924,8 +1072,11 @@ public class CashierStationGUI extends Application{
 		//Make check-box functional
 		cbDelivery.setOnAction((e) -> {
 			if(cbDelivery.isSelected()) {
-				grid4.getChildren().remove(btnCancel);
-				grid4.getChildren().remove(btnSubmit);
+				rows.getChildren().remove(buttonsHolder);
+				rows.getChildren().add(grid5);
+				rows.getChildren().add(buttonsHolder);
+			} else {
+				rows.getChildren().remove(grid5);
 			}
 		});
 		
@@ -962,9 +1113,25 @@ public class CashierStationGUI extends Application{
 				inventory.get(inventory.indexOf(itemsInCart.get(i).sku)).reduceUnitsInStock(Integer.valueOf(itemsInCart.get(i).tfQuantity.getText()));
 			}
 			transaction.appendToReceiptText("Sales Tax Rate: " + myStore.getTaxRate() + "\nTotal: " + total.getText());
+			if(cbDelivery.isSelected()) {
+				transaction.setDelivery(true);
+				transaction.setHasBeenDelivered(1);
+				DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+				transaction.setDeliveryTime(LocalDateTime.parse(String.valueOf(dpDeliveryDate.getValue()) + " " + cbHourPicker.getValue(), timeFormatter));
+				transaction.setRecipientFirstName(tfRecipientFirstName.getText());
+				transaction.setRecipientLastName(tfRecipientLastName.getText());
+				transaction.setRecipientAddress1(tfRecipientAddress1.getText());
+				transaction.setRecipientAddress2(tfRecipientAddress2.getText());
+				transaction.setRecipientCity(tfRecipientCity.getText());
+				transaction.setRecipientState(tfRecipientState.getText());
+				transaction.setRecipientZipcode(tfRecipientZipcode.getText());
+				transaction.setRecipientPhone(tfRecipientPhone.getText());
+				transaction.setDeliveryMessage(taMessage.getText());
+				transaction.appendToReceiptText("\nScheduled for delivery to\n" + transaction.getRecipientFirstName() + " " + transaction.getRecipientLastName() + ", on " + transaction.getDeliveryTime());
+			}
 			//Add transaction to transaction history
 			transactionHistory.put(transaction.getId(), transaction);
-			System.out.println("Transaction completed succesffully.\n" + transaction);
+			System.out.println("Transaction completed successfully.\n" + transaction + "\n");
 			loadHomeScreen(primaryStage);
 		});
 		
@@ -975,6 +1142,12 @@ public class CashierStationGUI extends Application{
 		primaryStage.show();
 	}
 	
+	/**
+	 * Loads a screen featuring a table showing all customers in the database. From this screen
+	 * the user can add, edit, and delete customers. The add and edit buttons launch the edit
+	 * customer screen. Deleting a customer requires a password verification.
+	 * @param primaryStage The main window of the GUI.
+	 */
 	public void loadCustomers(Stage primaryStage) {
 		//Create layout elements
 		StackPane pane = new StackPane();
@@ -1080,6 +1253,16 @@ public class CashierStationGUI extends Application{
 		primaryStage.show();
 	}
 	
+	/**
+	 * Loads a screen to edit/add customer information. For new customers, the text fields are
+	 * left blank. For existing customers, the text fields are populated with the customer's 
+	 * information. Filters are applied to several of the text fields to ensure that information
+	 * is entered correctly and completely.
+	 * @param primaryStage The main window of the GUI.
+	 * @param existingCustomer A customer object. This argument can also be a null value. If
+	 * null, the text fields are left blank (add customer). Otherwise, the text fields are
+	 * populated with the customer information (edit customer).
+	 */
 	public void editCustomer(Stage primaryStage, Customer existingCustomer) {
 		//Reminders array
 		ArrayList<ReminderFrame> remindersArray = new ArrayList<>();
@@ -1283,7 +1466,12 @@ public class CashierStationGUI extends Application{
 		primaryStage.show();
 	}
 	
-	public void managerControls(Stage primaryStage) {
+	/**
+	 * Loads a screen displaying basic information about the store. Password verification is
+	 * required to edit store settings. Additional features may be added to this in the future.
+	 * @param primaryStage The main window of the GUI.
+	 */
+	public void adminControls(Stage primaryStage) {
 		//Create layout elements
 		ScrollPane scrollPane = new ScrollPane();
 		VBox main = new VBox();
@@ -1344,11 +1532,17 @@ public class CashierStationGUI extends Application{
 		});
 		
 		Scene scene = new Scene(scrollPane);
-		primaryStage.setTitle(myStore.getStoreName() + ": Manager Controls");
+		primaryStage.setTitle(myStore.getStoreName() + ": Admin Controls");
 		primaryStage.setScene(scene);
 		primaryStage.show();
 	}
 	
+	/**
+	 * Loads a screen that allows the user to edit basic information about the store including
+	 * name, address, phone number, email, website, etc. In future iterations, this could also
+	 * feature store hours and other useful information.
+	 * @param primaryStage The main window of the GUI.
+	 */
 	public void editStoreSettings(Stage primaryStage) {
 		//Create layout elements
 		ScrollPane scrollPane = new ScrollPane();
@@ -1459,7 +1653,7 @@ public class CashierStationGUI extends Application{
 		
 		//Make buttons functional
 		btnCancel.setOnAction((e) -> {
-			managerControls(primaryStage);
+			adminControls(primaryStage);
 		});
 		
 		btnSubmit.setOnAction((e) -> {
@@ -1472,7 +1666,7 @@ public class CashierStationGUI extends Application{
 			myStore.setPhone(tfPhoneNumber.getText());
 			myStore.setWebsite(tfWebsite.getText());
 			myStore.setEmail(tfEmail.getText());
-			managerControls(primaryStage);
+			adminControls(primaryStage);
 		});
 		
 		Scene scene = new Scene(scrollPane);
@@ -1481,7 +1675,90 @@ public class CashierStationGUI extends Application{
 		primaryStage.show();
 
 	}
+	
+	/**
+	 * Loads a screen showing a list of orders scheduled for delivery. This method is still being 
+	 * written and needs refinement. Ideally, orders will be listed in chronological order.
+	 * @param primaryStage The main window of the GUI.
+	 */
+	public void loadDeliveries(Stage primaryStage) {
+		//Create layout elements
+		ScrollPane pane = new ScrollPane();
+		pane.setPrefSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+		VBox rows = new VBox(20);
+		rows.setPadding(new Insets(20, 20, 20, 20));
+		GridPane grid1 = new GridPane();
+		grid1.setAlignment(Pos.CENTER);
+		grid1.setHgap(10);
+		grid1.setVgap(15);
+		GridPane grid2 = new GridPane();
+		grid2.setAlignment(Pos.CENTER);
+		grid2.setHgap(10);
+		grid2.setVgap(15);
+				
+		//Create Labels
+		Label lbDeliveries = new Label("Delivery Schedule");
+		lbDeliveries.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+		Label lbNoDeliveries = new Label("No deliveries scheduled.");
+						
+		//Create text-fields and combo-box
+		TextField tfPhoneSearch = new TextField();
+				
+		//Create buttons
+		Button btnBack = new Button("Back");
+				
+		//Add column constraints
+		grid1.getColumnConstraints().addAll(new ColumnConstraints(120), new ColumnConstraints(140), new ColumnConstraints(80), new ColumnConstraints(160), new ColumnConstraints(230));
+		grid1.setColumnSpan(lbDeliveries, 2);
+		grid1.setColumnSpan(lbNoDeliveries, 2);
+		grid2.getColumnConstraints().addAll(new ColumnConstraints(120), new ColumnConstraints(140), new ColumnConstraints(80), new ColumnConstraints(160), new ColumnConstraints(230));
+		
+		//Add elements to layout
+		pane.setContent(rows);
+		rows.getChildren().add(grid1);
+		grid1.add(lbDeliveries, 0, 0);
+		
+		//Create array of deliveries
+		ArrayList<Transaction> deliveriesArray = new ArrayList<>();
+		ArrayList<DeliveryFrame> deliveryFramesArray = new ArrayList<>();
+		transactionHistory.forEach((id, transaction) -> {
+			if(transaction.isDelivery() ) {//&& transaction.getHasBeenDelivered() >= 0) {
+				deliveriesArray.add(transaction);
+			}			
+		});
+		deliveriesArray.sort(new DeliveryTimeComparator());
+		if(deliveriesArray.size() > 0) {
+			for(int i = 0; i < deliveriesArray.size(); i++) {
+				DeliveryFrame delivery1 = new DeliveryFrame(deliveriesArray.get(i));
+				deliveryFramesArray.add(delivery1);
+				rows.getChildren().add(delivery1.grid);
+				delivery1.setUpGrid(rows, deliveryFramesArray);
+			}
+		} else {
+			grid1.add(lbNoDeliveries, 0, 1);
+		}
+		rows.getChildren().add(grid2);
+		grid2.add(btnBack, 0, 0);
+		
+		//Make buttons functional
+		btnBack.setOnAction((e) -> {
+			loadHomeScreen(primaryStage);
+		});
+		
+		//Load scene
+		Scene scene = new Scene(pane);
+		primaryStage.setTitle(myStore.getStoreName() + ": Deliveries");
+		primaryStage.setScene(scene);
+		primaryStage.show();
+	}
 
+	/**
+	 * This method is designed to take the array containing the customer database and write it to
+	 * an external file so that this information is saved when the program is closed. This method
+	 * is called in the stop method (when the window is closed).
+	 * @param customerList An array containing the entire customer database.
+	 * @throws IOException Catches and prints exception if thrown.
+	 */
 	public void writeCustomerListToFile(ArrayList<Customer> customerList) throws IOException {
 		try (ObjectOutputStream output = new ObjectOutputStream(new FileOutputStream("CustomerDataBase.dat"));) {
 			output.writeObject(customerList);
@@ -1490,17 +1767,40 @@ public class CashierStationGUI extends Application{
 		}
 	}
 	
+	/**
+	 * This method is called in the start method (at launch), and reads information from the
+	 * customer database file. The information is returned as an array of customer objects.
+	 * @return Returns an array of customer objects read from the customer database file. Returns 
+	 * null if an exception is thrown.
+	 * @throws ClassNotFoundException Catches and prints exception if thrown.
+	 * @throws IOException Catches and prints exception if thrown.
+	 * @throws FileNotFoundException Catches and prints exception if thrown.
+	 */
 	public ArrayList<Customer> readCustomerListFromFile() throws ClassNotFoundException, IOException, FileNotFoundException {
+		File sourceFile = new File("CustomerDataBase.dat");
 		ArrayList<Customer> customerList = new ArrayList<>();
-		try (ObjectInputStream input = new ObjectInputStream(new FileInputStream("CustomerDataBase.dat"));) {
-			customerList.addAll((ArrayList<Customer>)(input.readObject()));
-		}  catch (Exception e) {
-			System.out.println(e);
-			return null;
-		} 
-		return customerList;
+		//Check to see if file exists, then try to read it
+		if(sourceFile.exists()) {
+			try (ObjectInputStream input = new ObjectInputStream(new FileInputStream("CustomerDataBase.dat"));) {
+				customerList.addAll((ArrayList<Customer>)(input.readObject()));
+			}  catch (Exception e) {
+				System.out.println(e);
+				return null;
+			} 
+			return customerList;
+		} else {
+			System.out.println("CustomerDataBase.dat could not be found.");
+			return customerList;
+		}
 	}
 	
+	/**
+	 * This method is called in the stop method (when window is closed). It exports all information
+	 * about the store's inventory to an external .dat file so that all information is saved
+	 * when the program is no longer running.
+	 * @param skuList An array of SKU objects. Contains information about the store's inventory.
+	 * @throws IOException Catches and prints exception if thrown.
+	 */
 	public void exportInventoryToFile(ArrayList<SKU> skuList) throws IOException {
 		try (ObjectOutputStream output = new ObjectOutputStream(new FileOutputStream("Inventory.dat"));) {
 			output.writeObject(skuList);
@@ -1509,17 +1809,39 @@ public class CashierStationGUI extends Application{
 		}
 	}
 	
+	/**
+	 * This method reads a file containing information about the store's inventory. It returns
+	 * this information as an array of SKU objects. It is called in the start method (at launch).
+	 * @return Returns an array of SKU objects. Or if an exception is thrown, returns null.
+	 * @throws ClassNotFoundException Catches and prints exception if thrown.
+	 * @throws IOException Catches and prints exception if thrown.
+	 * @throws FileNotFoundException Catches and prints exception if thrown.
+	 */
 	public ArrayList<SKU> readInventoryFromFile() throws ClassNotFoundException, IOException, FileNotFoundException {
+		File sourceFile = new File("Inventory.dat");
 		ArrayList<SKU> skuList = new ArrayList<>();
-		try (ObjectInputStream input = new ObjectInputStream(new FileInputStream("Inventory.dat"));) {
-			skuList.addAll((ArrayList<SKU>)(input.readObject()));
-		}  catch (Exception e) {
-			System.out.println(e);
-			return null;
-		} 
-		return skuList;
+		//Check to see if file exists, then try to read it
+		if(sourceFile.exists()) {
+			try (ObjectInputStream input = new ObjectInputStream(new FileInputStream("Inventory.dat"));) {
+				skuList.addAll((ArrayList<SKU>)(input.readObject()));
+			}  catch (Exception e) {
+				System.out.println(e);
+				return null;
+			} 
+			return skuList;
+		} else {
+			System.out.println("Inventory.dat could not be found.");
+			return skuList;
+		}
 	}
 	
+	/**
+	 * This method writes a map of transaction objects (the transaction history) to an external file
+	 * so that this information is saved when the program is not running. It is called in the stop
+	 * method (when the window is closed). 
+	 * @param transactionHistory A hash map of transaction objects. The key is the transaction object's id.
+	 * @throws IOException Catches and prints exception if thrown.
+	 */
 	public void writeTransactionHistoryToFile(HashMap<Long, Transaction> transactionHistory) throws IOException {
 		try (ObjectOutputStream output = new ObjectOutputStream(new FileOutputStream("TransactionHistory.dat"));) {
 			output.writeObject(transactionHistory);
@@ -1528,20 +1850,110 @@ public class CashierStationGUI extends Application{
 		}
 	}
 	
+	/**
+	 * This method imports the transaction history from an external file. It is returned as a
+	 * hash map of transaction objects. It is called in the start method (at launch).
+	 * @return Returns a hash map of transaction objects (the transaction history).
+	 * @throws ClassNotFoundException Catches and prints exception if thrown.
+	 * @throws IOException Catches and prints exception if thrown.
+	 * @throws FileNotFoundException Catches and prints exception if thrown.
+	 */
 	public HashMap<Long, Transaction> readTransactionHistoryFromFile() throws ClassNotFoundException, IOException, FileNotFoundException {
+		File sourceFile = new File("TransactionHistory.dat");
 		HashMap<Long, Transaction> transactionHistory = new HashMap<>();
-		try (ObjectInputStream input = new ObjectInputStream(new FileInputStream("TransactionHistory.dat"));) {
-			transactionHistory.putAll((HashMap<Long, Transaction>)(input.readObject()));
-		}  catch (Exception e) {
-			System.out.println(e);
-			return null;
-		} 
-		return transactionHistory;
+		//Check to see if file exists, then try to read it
+		if(sourceFile.exists()) {
+			try (ObjectInputStream input = new ObjectInputStream(new FileInputStream("TransactionHistory.dat"));) {
+				transactionHistory.putAll((HashMap<Long, Transaction>)(input.readObject()));
+			}  catch (Exception e) {
+				System.out.println(e);
+				return null;
+			} 
+			return transactionHistory;
+		} else {
+			System.out.println("TransactionHistory.dat could not be found.");
+			return transactionHistory;
+		}
 	}
 }
 
-class ReminderFrame {
+/**
+ * The DeliveryFrame class is designed to be a modular graphic feature. Each DeliveryFrame displays
+ * information about a transaction. The loadDeliveries method uses these frames to populate a 
+ * delivery schedule in the window. Each frame contains buttons to update the status of the delivery.
+ * @author Adam Grimshaw
+ */
+class DeliveryFrame {
+	//Create graphic elements
+	GridPane grid = new GridPane();
+	Label lbDate = new Label();
+	Label lbHour = new Label();
+	Label lbShippingAddress = new Label();
+	Label lbItemList = new Label("");
+	Label lbHasMessage = new Label();
+	Button btnRemove = new Button("Remove");
+	Button btnDelivered = new Button("Delivered");
+	Button btnCouldNot = new Button("Could Not Deliver");
 	
+	//Transaction to hold information about delivery
+	Transaction transaction = new Transaction();
+
+	//Constructors
+	public DeliveryFrame() {
+		
+	}
+	
+	public DeliveryFrame(Transaction trns) {
+		this.transaction = trns;
+	}
+	
+	//Methods
+	/**
+	 * This method populates the labels with transaction information, and adds them to the
+	 * grid pane. It places buttons and defines their functions. 
+	 * @param main The VBox into which the deliveryFrame GridPane is being added. 
+	 * @param array The array of DeliveryFrame objects used to keep track of this DeliveryFrame.
+	 */
+	public void setUpGrid(VBox main, ArrayList<DeliveryFrame> array) {
+		//Set text in labels
+		lbDate.setText(transaction.getDeliveryTime().toString());
+		lbShippingAddress.setText(transaction.formatDeliveryAddress());
+		for(int i = 0; i < transaction.getItems().size(); i++) {
+			lbItemList.setText(lbItemList.getText() + transaction.getItems().get(i).getName());
+		}
+		if(transaction.getDeliveryMessage().equals("")) {
+			lbHasMessage.setText("No message included.");
+		} else {
+			lbHasMessage.setText("Has message.");
+		}
+		
+		//Populate grid pane
+		grid.add(lbDate, 0, 0);
+		grid.add(lbHour, 1, 0);
+		grid.add(lbShippingAddress, 0, 1);
+		grid.add(btnRemove, 0, 4);
+		grid.add(btnCouldNot, 1, 4);
+		grid.add(btnDelivered, 2, 4);
+		grid.setAlignment(Pos.CENTER);
+		grid.setHgap(10);
+		grid.setVgap(8);
+		grid.getColumnConstraints().addAll(new ColumnConstraints(100), new ColumnConstraints(160), new ColumnConstraints(80), new ColumnConstraints(160), new ColumnConstraints(70), new ColumnConstraints(70), new ColumnConstraints(70));
+		grid.setColumnSpan(lbDate, 2);
+		btnRemove.setOnAction((e) -> {
+			array.remove(this);
+			main.getChildren().remove(this.grid);
+		});
+	}
+}
+
+/**
+ * The ReminderFrame class is designed to be a modular graphic feature. Customers can request 
+ * reminders for upcoming or reoccurring occasions. On the edit customer screen, there is a button
+ * that reads Add Reminder. When clicked, it creates a new ReminderFrame and displays it on the 
+ * screen. The ReminderFrame features text fields to collect information about the upcoming occasion.
+ * @author Adam Grimshaw
+ */
+class ReminderFrame {
 	//Options for combo box
 	private List<String> occasionList = Arrays.asList("Anniversary", "Birthday", "Other");
 	ObservableList<String> occasions = FXCollections.observableArrayList(occasionList);
@@ -1559,6 +1971,7 @@ class ReminderFrame {
 	Button btnRemove = new Button("Remove");
 	Customer customer = new Customer();
 	
+	//Constructors
 	public ReminderFrame() {
 	}
 	
@@ -1566,6 +1979,13 @@ class ReminderFrame {
 		this.customer = customer;
 	}
 	
+	//Methods
+	/**
+	 * This method attaches labels and text fields to the grid pane. It places the remove
+	 * button and defines it function.
+	 * @param main The VBox into which the ReminderFrame GridPane is being added.
+	 * @param array The array of ReminderFrame objects used to keep track of this ReminderFrame.
+	 */
 	public void setUpGrid(VBox main, ArrayList<ReminderFrame> array) {
 		grid.add(lbDate, 0, 0);
 		grid.add(dpDate, 1, 0);
@@ -1586,11 +2006,18 @@ class ReminderFrame {
 			main.getChildren().remove(this.grid);
 		});
 	}
-	
 }
 
+/**
+ * The CheckOutItem class is designed to be a modular graphic feature used in checkout. As each new
+ * item is added to checkout, a CheckOutItem is created and displayed on the screen. It displays
+ * information about the item, and allows the user to enter a quantity for that item. It also features
+ * a button to remove that item from the checkout cart.
+ * @author Adam Grimshaw
+ *
+ */
 class CheckOutItem {
-	
+	//Layout elements
 	GridPane grid = new GridPane();
 	Label rowIndex = new Label();
 	Label itemName = new Label();
@@ -1599,10 +2026,13 @@ class CheckOutItem {
 	TextField tfQuantity = new TextField("0");
 	Label subtotal = new Label();
 	Button btnRemove = new Button("Remove");
+	
+	//Properties
 	SKU sku;
 	double subValue = 0.0;
 	double preTaxTotal;
 	
+	//Constructors
 	public CheckOutItem() {
 		
 	}
@@ -1625,9 +2055,19 @@ class CheckOutItem {
 		});
 	}
 	
+	/**
+	 * This method attaches the various visual elements (labels, text fields, buttons, etc.) to the
+	 * grid pane. Additionally, this method calculates and updates subtotal, tax, and total values
+	 * when the quantity field is changed.
+	 * @param sku A SKU object. (The item being added to the checkout cart.)
+	 * @param total A Label containing the total cost.
+	 * @param tax A Label containing the cost of sales tax.
+	 * @param sub A Label containing the subtotal before adding sales tax.
+	 * @param array An array of CheckOutItem objects. (Used for referencing this CheckOutItem.)
+	 * @param myStore A StoreSettings object. (Sales tax rate is saved in StoreSettings.)
+	 */
 	public void setUpGrid(SKU sku, Label total, Label tax, Label sub, ArrayList<CheckOutItem> array, StoreSettings myStore) {
-		
-		//grid.setGridLinesVisible(true);
+		//Attach layout elements to grid
 		rowIndex.setText(String.valueOf(array.indexOf(this) + 1));
 		grid.add(rowIndex, 0, 0);
 		grid.add(itemName, 1, 0);
@@ -1643,8 +2083,10 @@ class CheckOutItem {
 		grid.setHalignment(subtotal, HPos.RIGHT);
 		itemQuantity.setFont(Font.font("Arial", FontPosture.ITALIC, 13));
 		
+		//Constrain user input to numbers for quantity field
 		tfQuantity.setTextFormatter(quantityFormatter);
 		
+		//Update totals based on quantity
 		tfQuantity.setOnKeyReleased( e -> {
 			preTaxTotal = Double.parseDouble(sub.getText().substring(1)) - subValue;
 			if(tfQuantity.getText().equals("")) {
@@ -1662,8 +2104,10 @@ class CheckOutItem {
 		tfQuantity.selectAll();
 	}
 	
+	//Formatting for currency fields
 	NumberFormat currencyFormat = NumberFormat.getCurrencyInstance();
 	
+	//Limits text input to numbers
 	UnaryOperator<Change> quantityFilter = change -> {
 		String text = change.getText();
 		String fullText = change.getControlNewText();
@@ -1674,4 +2118,23 @@ class CheckOutItem {
 		}
 	};
 	TextFormatter<String> quantityFormatter = new TextFormatter<>(quantityFilter);
+}
+
+class DeliveryTimeComparator implements Comparator<Transaction>, java.io.Serializable {
+	//Serializable id
+	private static final long serialVersionUID = 2295596500494798334L;
+	
+	//Compares two Transaction objects based on scheduled delivery time
+		public int compare(Transaction t1, Transaction t2) {
+			LocalDateTime d1 = t1.getDeliveryTime();
+			LocalDateTime d2 = t2.getDeliveryTime();
+			
+			if(d1.isBefore(d2)) {
+				return -1;
+			} else if (d1.isEqual(d2)) {
+				return 0;
+			} else {
+				return 1;
+			}
+		}
 }
