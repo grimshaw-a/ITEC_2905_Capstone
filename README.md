@@ -1,6 +1,6 @@
 # ITEC_2905_Capstone
 <p>Programming Language: Java </p>
-<p>Date: October 2020 </p>
+<p>Date: October 16, 2020 </p>
 <p>Student: Adam Grimshaw </p>
 <p>School: Southwest Technical College </p>
 
@@ -21,10 +21,17 @@ Learn the basics of programming and be prepared to enter the workforce in this i
 # Floral Shop Software
 
 ## How to Run
-All files in the repository are necessary to run the program, including the .dat files. For future releases, I need to update the code so that if the .dat files are missing, it will still launch. The main method is found in CashierStationGUI. The entire program can be accessed from there.
+The main method is located in CashierStationGUI. Launch the program from there. Additional classes, found in seperate Java files, are needed for the interface to run including: Customer, SKU, Transaction, and StoreSettings. 
+
+As the primary function of this program is to collect, save, and organize information, it should be noted that all information entered into the program is exported to one of four .dat files. These files preserve the retailer's customer list, inventory, and transaction history. If these files are missing, the program will launch as a blank slate and will export new files upon closing. 
 
 ## Code Example
-This software is designed to manage both checkout functionality and administrative tasks. As such, it made sense to password protect certain features. For this function, I wanted to create a simple module that I could use and reuse in every situation requiring a password to be entered. My solution was to create a method, passwordVerificationWindow(), that launches a new window prompting the user to enter the password. When this window launches, it puts the main window on pause using the initModality() and showAndWait() methods, and only after the password window has been closed, will the main window resume running. The passwordVerificationWindow() method returns a boolean value. To implement effectively, the method needs to be used as the conditional in an if/else statement. If the password is entered correctly, the method returns true. Otherwise, it returns false. Thus, any feature can easily be password protected by nesting it within a simple conditional statement.
+This software is designed to manage both checkout functionality and administrative tasks. As such, it made sense to password protect certain features. For this function, I wanted to create a simple module that I could use and reuse in every situation requiring a password to be entered. 
+
+My solution was to create a method, passwordVerificationWindow(), that launches a new window prompting the user to enter the password. When this window launches, it puts the main window on pause using the initModality() and showAndWait() methods, and only after the password window has been closed, will the main window resume running. 
+
+The passwordVerificationWindow() method returns a boolean value. To implement effectively, the method needs to be used as the conditional in an if/else statement. If the password is entered correctly, the method returns true. Otherwise, it returns false. Thus, any feature can easily be password protected by nesting it within a simple conditional statement.
+
 ```
 public boolean passwordVerificationWindow(String message) {
 		//Create layout elements
@@ -73,6 +80,7 @@ public boolean passwordVerificationWindow(String message) {
 
 ## Tests
 The formatMailingAddress() method gets the contact information for a customer from a Customer object and formats it according to the standard U.S. convention for mailing addresses. The method first determines if the address requires 3 or 4 lines, and then concatenates a String with appropriate line feeds and returns it.
+
 ```
 @Test
 	public void testFormatMailingAddress() {
